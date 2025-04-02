@@ -2,6 +2,11 @@ import argparse
 from datetime import datetime
 import pytz
 import sys
+from dateutil import parser as DateParser
+from colorama import init, Fore, Style
+
+# Initialize colorama
+init()
 
 BANNER =r"""
    _____ _                        _______          _ 
@@ -21,20 +26,27 @@ def UnixToDatetime(timestamp, timezone=None, outputFormat="%Y-%m-%d %H:%M:%S"):
         if timezone:
             tz = pytz.timezone(timezone)
             dtObject = pytz.utc.localize(dtObject).astimezone(tz)
-        return dtObject.strftime(outputFormat)
+        # Predefined styles
+        if outputFormat == "short":
+            outputFormat = "%Y-%m-%d"
+        elif outputFormat == "long":
+            outputFormat = "%B %d, %Y %H:%M:%S"
+        elif outputFormat == "iso":
+            outputFormat = "%Y-%m-%dT%H:%M:%SZ"
+        return f"{Fore.GREEN}{dtObject.strftime(outputFormat)}{Style.RESET_ALL}"
     except Exception as e:
-        return f"Error: {str(e)}"
+        return f"{Fore.RED}Error: {str(e)}{Style.RESET_ALL}"
 
 def DatetimeToUnix(dateStr, timezone=None):
     """Convert human-readable date to Unix timestamp."""
     try:
-        dtObject = datetime.strptime(dateStr, "%Y-%m-%d %H:%M:%S")
+        dtObject = DateParser.parse(dateStr)  # Flexible parsing
         if timezone:
             tz = pytz.timezone(timezone)
             dtObject = tz.localize(dtObject)
         return int(dtObject.timestamp())
     except Exception as e:
-        return f"Error: {str(e)}"
+        return f"{Fore.RED}Error: {str(e)}{Style.RESET_ALL}"
 
 def ProcessBatchFile(filePath, timezone=None, outputFormat="%Y-%m-%d %H:%M:%S"):
     """Process timestamps from a file."""
@@ -69,14 +81,16 @@ def InteractiveMode():
             print("\nInterrupted! Exiting interactive mode.")
             break
 
+
 def Main():
     parser = argparse.ArgumentParser(
         description="ChronoTool: A time conversion utility",
         formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument('-t', '--timestamp', type=int, help="Convert Unix timestamp to date")
-    parser.add_argument('-d', '--date', help="Convert date (YYYY-MM-DD HH:MM:SS) to Unix timestamp")
-    parser.add_argument('-f', '--format', default="%Y-%m-%d %H:%M:%S", help="Output date format (e.g., %%Y-%%m-%%d)")
+    parser.add_argument('-d', '--date', help="Convert date (any format) to Unix timestamp")
+    parser.add_argument('-f', '--format', default="%Y-%m-%d %H:%M:%S",
+                        help="Output date format (e.g., %%Y-%%m-%%d) or 'short', 'long', 'iso'")
     parser.add_argument('-z', '--timezone', help="Time zone (e.g., US/Pacific)")
     parser.add_argument('-i', '--input', help="File with timestamps (one per line)")
 
@@ -89,7 +103,7 @@ def Main():
         print(f"{args.timestamp} -> {result}")
     elif args.date:
         result = DatetimeToUnix(args.date, args.timezone)
-        print(f"{args.date} -> {result}")
+        print(f"{args.date} -> {Fore.CYAN}{result}{Style.RESET_ALL}")
     elif args.input:
         ProcessBatchFile(args.input, args.timezone, args.format)
     else:
