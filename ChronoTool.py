@@ -52,19 +52,22 @@ def ProcessBatchFile(filePath, timezone=None, outputFormat="%Y-%m-%d %H:%M:%S"):
 
 def InteractiveMode():
     """Run ChronoTool in interactive mode."""
-    print(BANNER)
     print("Enter a Unix timestamp or date (YYYY-MM-DD HH:MM:SS), or 'q' to quit")
     while True:
-        userInput = input("\nInput: ").strip()
-        if userInput.lower() == 'q':
-            print("Goodbye!")
+        try:
+            userInput = input("\nInput: ").strip()
+            if userInput.lower() == 'q':
+                print("Goodbye!")
+                break
+            if userInput.isdigit():
+                result = UnixToDatetime(int(userInput))
+                print(f"Result: {result}")
+            else:
+                result = DatetimeToUnix(userInput)
+                print(f"Result: {result}")
+        except KeyboardInterrupt:
+            print("\nInterrupted! Exiting interactive mode.")
             break
-        if userInput.isdigit():
-            result = UnixToDatetime(int(userInput))
-            print(f"Result: {result}")
-        else:
-            result = DatetimeToUnix(userInput)
-            print(f"Result: {result}")
 
 def Main():
     parser = argparse.ArgumentParser(
