@@ -3,7 +3,7 @@ from datetime import datetime
 import pytz
 import sys
 
-BANNER ="""
+BANNER =r"""
    _____ _                        _______          _ 
   / ____| |                      |__   __|        | |
  | |    | |__  _ __ ___  _ __   ___ | | ___   ___ | |
