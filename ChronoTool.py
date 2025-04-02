@@ -1,17 +1,18 @@
+import argparse
 from datetime import datetime
 import pytz
+import sys
 
-def UnixToDatetime(timestamp, timezone=None):
+def UnixToDatetime(timestamp, timezone=None, outputFormat="%Y-%m-%d %H:%M:%S"):
     """Convert Unix timestamp to human-readable date."""
     try:
-        # Handle millisecond timestamps
         if len(str(timestamp)) > 10:
             timestamp = timestamp / 1000
         dtObject = datetime.fromtimestamp(timestamp)
         if timezone:
             tz = pytz.timezone(timezone)
             dtObject = pytz.utc.localize(dtObject).astimezone(tz)
-        return dtObject.strftime("%Y-%m-%d %H:%M:%S")
+        return dtObject.strftime(outputFormat)
     except Exception as e:
         return f"Error: {str(e)}"
 
@@ -46,5 +47,26 @@ def InteractiveMode():
             print(f"Date: {userInput}")
             print(f"Unix Timestamp: {result}")
 
+def Main():
+    parser = argparse.ArgumentParser(
+        description="ChronoTool: A time conversion utility",
+        formatter_class=argparse.RawTextHelpFormatter
+    )
+    parser.add_argument('-t', '--timestamp', type=int, help="Convert Unix timestamp to date")
+    parser.add_argument('-d', '--date', help="Convert date (YYYY-MM-DD HH:MM:SS) to Unix timestamp")
+    parser.add_argument('-f', '--format', default="%Y-%m-%d %H:%M:%S", help="Output date format (e.g., %%Y-%%m-%%d)")
+    parser.add_argument('-z', '--timezone', help="Time zone (e.g., US/Pacific)")
+
+    args = parser.parse_args()
+
+    if args.timestamp:
+        result = UnixToDatetime(args.timestamp, args.timezone, args.format)
+        print(f"{args.timestamp} -> {result}")
+    elif args.date:
+        result = DatetimeToUnix(args.date, args.timezone)
+        print(f"{args.date} -> {result}")
+    else:
+        InteractiveMode()
+
 if __name__ == "__main__":
-    InteractiveMode()
+    Main()
