@@ -7,15 +7,21 @@ A versatile time conversion utility.
 
 ## Usage
 - Interactive mode: `python ChronoTool.py`
-- Convert timestamp: `python ChronoTool.py -t 1617235200` or `--timestamp 1617235200`
-- Convert date: `python ChronoTool.py -d "2025-04-02 12:00:00"`
+- Convert timestamp: `python ChronoTool.py -t 1617235200`
+- Convert date: `python ChronoTool.py -d "2025-04-02"`
+- Relative time: `python ChronoTool.py -r "2 days ago"`
+- Time delta: `python ChronoTool.py -delta "2025-01-01" "2025-12-31"`
 - Batch process: `python ChronoTool.py -i timestamps.txt`
-- Custom format: `python ChronoTool.py -t 1617235200 -f "%B %d, %Y"`
+- Custom format: `python ChronoTool.py -t 1617235200 -f "long"`
 - Time zone: `python ChronoTool.py -t 1617235200 -z "US/Pacific"`
+- List time zones: `python ChronoTool.py -zlist`
+- Export: `python ChronoTool.py -t 1617235200 -o output.txt`
 
 ## Features
-- Bidirectional time conversion (Unix to date and date to Unix)
-- Time zone support with pytz
-- Custom output formats
-- Batch processing from files
-- CLI and interactive modes
+- Bidirectional time conversion
+- Relative time and time delta calculations
+- Time zone support
+- Custom output formats and styles
+- Batch processing
+- Logging and verbose mode
+- Configuration via .chronotoolrc

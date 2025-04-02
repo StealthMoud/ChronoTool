@@ -151,6 +151,8 @@ def Main():
     parser.add_argument('-v', '--verbose', action='store_true', help="Enable verbose output")
     parser.add_argument('-l', '--log', help="Log output to file")
     parser.add_argument('-V', '--version', action='store_true', help="Show version and exit")
+    parser.add_argument('-zlist', '--timezone-list', action='store_true', help="List available time zones")
+    parser.add_argument('-o', '--output', help="Export results to file")
 
     args = parser.parse_args()
 
@@ -164,16 +166,24 @@ def Main():
 
     print(BANNER)
 
-    if args.timestamp:
+    if args.timezone_list:
+        print(f"{Fore.YELLOW}Available Time Zones:{Style.RESET_ALL}")
+        for tz in pytz.all_timezones:
+            print(tz)
+    elif args.timestamp:
         result = UnixToDatetime(args.timestamp, args.timezone, args.format, args.verbose)
         print(f"{args.timestamp} -> {result}")
+        if args.output:
+            with open(args.output, 'a') as f:
+                f.write(f"{args.timestamp} -> {result}\n")
         if args.log:
             logging.info(f"Converted timestamp {args.timestamp} to {result}")
     elif args.date:
         result = DatetimeToUnix(args.date, args.timezone)
         print(f"{args.date} -> {Fore.CYAN}{result}{Style.RESET_ALL}")
-        if args.log:
-            logging.info(f"Converted date {args.date} to {result}")
+        if args.output:
+            with open(args.output, 'a') as f:
+                f.write(f"{args.date} -> {result}\n")
     elif args.relative:
         result = ParseRelativeTime(args.relative, args.timezone)
         print(f"{args.relative} -> {Fore.CYAN}{result}{Style.RESET_ALL}")
