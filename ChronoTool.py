@@ -7,6 +7,7 @@ from colorama import init, Fore, Style
 import humanfriendly
 import configparser
 import os
+import logging
 
 
 # Initialize colorama
@@ -17,6 +18,15 @@ CONFIG_FILE = os.path.expanduser("~/.chronotoolrc")
 Config = configparser.ConfigParser()
 if os.path.exists(CONFIG_FILE):
     Config.read(CONFIG_FILE)
+
+# Setup logging
+def SetupLogging(logFile=None):
+    logging.basicConfig(
+        filename=logFile,
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s"
+    )
+
 
 BANNER = r"""
    _____ _                        _______          _ 
@@ -139,17 +149,31 @@ def Main():
                         help="Time zone (e.g., US/Pacific)")
     parser.add_argument('-i', '--input', help="File with timestamps (one per line)")
     parser.add_argument('-v', '--verbose', action='store_true', help="Enable verbose output")
+    parser.add_argument('-l', '--log', help="Log output to file")
+    parser.add_argument('-V', '--version', action='store_true', help="Show version and exit")
 
     args = parser.parse_args()
+
+    if args.log:
+        SetupLogging(args.log)
+        logging.info("ChronoTool started")
+
+    if args.version:
+        print("ChronoTool v0.1.0")
+        sys.exit(0)
 
     print(BANNER)
 
     if args.timestamp:
         result = UnixToDatetime(args.timestamp, args.timezone, args.format, args.verbose)
         print(f"{args.timestamp} -> {result}")
+        if args.log:
+            logging.info(f"Converted timestamp {args.timestamp} to {result}")
     elif args.date:
         result = DatetimeToUnix(args.date, args.timezone)
         print(f"{args.date} -> {Fore.CYAN}{result}{Style.RESET_ALL}")
+        if args.log:
+            logging.info(f"Converted date {args.date} to {result}")
     elif args.relative:
         result = ParseRelativeTime(args.relative, args.timezone)
         print(f"{args.relative} -> {Fore.CYAN}{result}{Style.RESET_ALL}")

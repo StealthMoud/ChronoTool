@@ -4,3 +4,4 @@ colorama
 humanfriendly
 configparser
 os
+pytest  # Optional, for testing
