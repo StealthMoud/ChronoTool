@@ -1,5 +1,5 @@
 import argparse
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 import sys
 from dateutil import parser as DateParser
@@ -8,7 +8,6 @@ import humanfriendly
 import configparser
 import os
 import logging
-
 
 # Initialize colorama
 init()
@@ -21,14 +20,19 @@ if os.path.exists(CONFIG_FILE):
 
 # Setup logging
 def SetupLogging(logFile=None):
-    logging.basicConfig(
-        filename=logFile,
-        level=logging.INFO,
-        format="%(asctime)s - %(levelname)s - %(message)s"
-    )
+    if logFile:
+        logging.basicConfig(
+            filename=logFile,
+            level=logging.INFO,
+            format="%(asctime)s - %(levelname)s - %(message)s"
+        )
+    else:
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s - %(levelname)s - %(message)s"
+        )
 
-
-BANNER = r"""
+BANNER = """
    _____ _                        _______          _ 
   / ____| |                      |__   __|        | |
  | |    | |__  _ __ ___  _ __   ___ | | ___   ___ | |
@@ -37,7 +41,6 @@ BANNER = r"""
   \_____|_| |_|_|  \___/|_| |_|\___/|_|\___/ \___/|_|                       
                     v0.1.0 - Time Conversion Utility   
 """
-
 
 def UnixToDatetime(timestamp, timezone=None, outputFormat="%Y-%m-%d %H:%M:%S", verbose=False):
     """Convert Unix timestamp to human-readable date."""
@@ -48,13 +51,18 @@ def UnixToDatetime(timestamp, timezone=None, outputFormat="%Y-%m-%d %H:%M:%S", v
         if timezone:
             tz = pytz.timezone(timezone)
             dtObject = pytz.utc.localize(dtObject).astimezone(tz)
+        if outputFormat == "short":
+            outputFormat = "%Y-%m-%d"
+        elif outputFormat == "long":
+            outputFormat = "%B %d, %Y %H:%M:%S"
+        elif outputFormat == "iso":
+            outputFormat = "%Y-%m-%dT%H:%M:%SZ"
         result = dtObject.strftime(outputFormat)
         if verbose:
             print(f"{Fore.BLUE}Verbose: Input={timestamp}, Timezone={timezone}, Format={outputFormat}{Style.RESET_ALL}")
         return f"{Fore.GREEN}{result}{Style.RESET_ALL}"
     except Exception as e:
         return f"{Fore.RED}Error: {str(e)}{Style.RESET_ALL}"
-
 
 def DatetimeToUnix(dateStr, timezone=None):
     """Convert human-readable date to Unix timestamp."""
@@ -67,34 +75,33 @@ def DatetimeToUnix(dateStr, timezone=None):
     except Exception as e:
         return f"{Fore.RED}Error: {str(e)}{Style.RESET_ALL}"
 
-    def ParseRelativeTime(relativeStr, timezone=None):
-        """Convert relative time (e.g., '2 days ago') to Unix timestamp."""
-        try:
-            seconds = humanfriendly.parse_timespan(relativeStr)
-            now = datetime.now(pytz.utc if timezone is None else pytz.timezone(timezone))
-            dtObject = now - timedelta(seconds=seconds) if "ago" in relativeStr.lower() else now + timedelta(
-                seconds=seconds)
-            return int(dtObject.timestamp())
-        except Exception as e:
-            return f"{Fore.RED}Error: {str(e)}{Style.RESET_ALL}"
+def ParseRelativeTime(relativeStr, timezone=None):
+    """Convert relative time (e.g., '2 days ago') to Unix timestamp."""
+    try:
+        seconds = humanfriendly.parse_timespan(relativeStr)
+        now = datetime.now(pytz.utc if timezone is None else pytz.timezone(timezone))
+        dtObject = now - timedelta(seconds=seconds) if "ago" in relativeStr.lower() else now + timedelta(seconds=seconds)
+        return int(dtObject.timestamp())
+    except Exception as e:
+        return f"{Fore.RED}Error: {str(e)}{Style.RESET_ALL}"
 
-        def CalculateTimeDelta(input1, input2, timezone=None):
-            """Calculate time difference between two inputs."""
-            try:
-                if input1.isdigit() and input2.isdigit():
-                    dt1 = datetime.fromtimestamp(int(input1) / (1000 if len(input1) > 10 else 1))
-                    dt2 = datetime.fromtimestamp(int(input2) / (1000 if len(input2) > 10 else 1))
-                else:
-                    dt1 = DateParser.parse(input1)
-                    dt2 = DateParser.parse(input2)
-                if timezone:
-                    tz = pytz.timezone(timezone)
-                    dt1 = tz.localize(dt1) if dt1.tzinfo is None else dt1
-                    dt2 = tz.localize(dt2) if dt2.tzinfo is None else dt2
-                delta = dt2 - dt1
-                return f"{Fore.YELLOW}{humanfriendly.format_timespan(delta.total_seconds())}{Style.RESET_ALL}"
-            except Exception as e:
-                return f"{Fore.RED}Error: {str(e)}{Style.RESET_ALL}"
+def CalculateTimeDelta(input1, input2, timezone=None):
+    """Calculate time difference between two inputs."""
+    try:
+        if input1.isdigit() and input2.isdigit():
+            dt1 = datetime.fromtimestamp(int(input1) / (1000 if len(input1) > 10 else 1))
+            dt2 = datetime.fromtimestamp(int(input2) / (1000 if len(input2) > 10 else 1))
+        else:
+            dt1 = DateParser.parse(input1)
+            dt2 = DateParser.parse(input2)
+        if timezone:
+            tz = pytz.timezone(timezone)
+            dt1 = tz.localize(dt1) if dt1.tzinfo is None else dt1
+            dt2 = tz.localize(dt2) if dt2.tzinfo is None else dt2
+        delta = dt2 - dt1
+        return f"{Fore.YELLOW}{humanfriendly.format_timespan(delta.total_seconds())}{Style.RESET_ALL}"
+    except Exception as e:
+        return f"{Fore.RED}Error: {str(e)}{Style.RESET_ALL}"
 
 def ProcessBatchFile(filePath, timezone=None, outputFormat="%Y-%m-%d %H:%M:%S"):
     """Process timestamps from a file."""
@@ -110,10 +117,10 @@ def ProcessBatchFile(filePath, timezone=None, outputFormat="%Y-%m-%d %H:%M:%S"):
     except Exception as e:
         print(f"Error processing file: {str(e)}")
 
-
 History = []
 def InteractiveMode():
     """Run ChronoTool in interactive mode."""
+    print(BANNER)
     print("Enter a Unix timestamp, date, or 'history' to see past inputs, or 'q' to quit")
     while True:
         userInput = input("\nInput: ").strip()
@@ -132,7 +139,6 @@ def InteractiveMode():
             else:
                 result = DatetimeToUnix(userInput)
                 print(f"Result: {result}")
-
 
 def Main():
     parser = argparse.ArgumentParser(
@@ -184,17 +190,30 @@ def Main():
         if args.output:
             with open(args.output, 'a') as f:
                 f.write(f"{args.date} -> {result}\n")
+        if args.log:
+            logging.info(f"Converted date {args.date} to {result}")
     elif args.relative:
         result = ParseRelativeTime(args.relative, args.timezone)
         print(f"{args.relative} -> {Fore.CYAN}{result}{Style.RESET_ALL}")
+        if args.output:
+            with open(args.output, 'a') as f:
+                f.write(f"{args.relative} -> {result}\n")
+        if args.log:
+            logging.info(f"Converted relative time {args.relative} to {result}")
     elif args.delta:
         result = CalculateTimeDelta(args.delta[0], args.delta[1], args.timezone)
         print(f"Time difference: {result}")
+        if args.output:
+            with open(args.output, 'a') as f:
+                f.write(f"Time difference between {args.delta[0]} and {args.delta[1]}: {result}\n")
+        if args.log:
+            logging.info(f"Calculated time delta: {result}")
     elif args.input:
         ProcessBatchFile(args.input, args.timezone, args.format)
+        if args.log:
+            logging.info(f"Processed batch file {args.input}")
     else:
         InteractiveMode()
-
 
 if __name__ == "__main__":
     Main()
