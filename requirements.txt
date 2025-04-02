@@ -2,3 +2,5 @@ pytz
 python-dateutil
 colorama
 humanfriendly
+configparser
+os

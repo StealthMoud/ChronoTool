@@ -5,9 +5,18 @@ import sys
 from dateutil import parser as DateParser
 from colorama import init, Fore, Style
 import humanfriendly
+import configparser
+import os
+
 
 # Initialize colorama
 init()
+
+# Add configuration loading
+CONFIG_FILE = os.path.expanduser("~/.chronotoolrc")
+Config = configparser.ConfigParser()
+if os.path.exists(CONFIG_FILE):
+    Config.read(CONFIG_FILE)
 
 BANNER = r"""
    _____ _                        _______          _ 
@@ -20,7 +29,7 @@ BANNER = r"""
 """
 
 
-def UnixToDatetime(timestamp, timezone=None, outputFormat="%Y-%m-%d %H:%M:%S"):
+def UnixToDatetime(timestamp, timezone=None, outputFormat="%Y-%m-%d %H:%M:%S", verbose=False):
     """Convert Unix timestamp to human-readable date."""
     try:
         if len(str(timestamp)) > 10:
@@ -29,14 +38,10 @@ def UnixToDatetime(timestamp, timezone=None, outputFormat="%Y-%m-%d %H:%M:%S"):
         if timezone:
             tz = pytz.timezone(timezone)
             dtObject = pytz.utc.localize(dtObject).astimezone(tz)
-        # Predefined styles
-        if outputFormat == "short":
-            outputFormat = "%Y-%m-%d"
-        elif outputFormat == "long":
-            outputFormat = "%B %d, %Y %H:%M:%S"
-        elif outputFormat == "iso":
-            outputFormat = "%Y-%m-%dT%H:%M:%SZ"
-        return f"{Fore.GREEN}{dtObject.strftime(outputFormat)}{Style.RESET_ALL}"
+        result = dtObject.strftime(outputFormat)
+        if verbose:
+            print(f"{Fore.BLUE}Verbose: Input={timestamp}, Timezone={timezone}, Format={outputFormat}{Style.RESET_ALL}")
+        return f"{Fore.GREEN}{result}{Style.RESET_ALL}"
     except Exception as e:
         return f"{Fore.RED}Error: {str(e)}{Style.RESET_ALL}"
 
@@ -96,24 +101,27 @@ def ProcessBatchFile(filePath, timezone=None, outputFormat="%Y-%m-%d %H:%M:%S"):
         print(f"Error processing file: {str(e)}")
 
 
+History = []
 def InteractiveMode():
     """Run ChronoTool in interactive mode."""
-    print("Enter a Unix timestamp or date (YYYY-MM-DD HH:MM:SS), or 'q' to quit")
+    print("Enter a Unix timestamp, date, or 'history' to see past inputs, or 'q' to quit")
     while True:
-        try:
-            userInput = input("\nInput: ").strip()
-            if userInput.lower() == 'q':
-                print("Goodbye!")
-                break
+        userInput = input("\nInput: ").strip()
+        if userInput.lower() == 'q':
+            print("Goodbye!")
+            break
+        elif userInput.lower() == 'history':
+            print(f"{Fore.YELLOW}History:{Style.RESET_ALL}")
+            for i, entry in enumerate(History, 1):
+                print(f"{i}. {entry}")
+        else:
+            History.append(userInput)
             if userInput.isdigit():
                 result = UnixToDatetime(int(userInput))
                 print(f"Result: {result}")
             else:
                 result = DatetimeToUnix(userInput)
                 print(f"Result: {result}")
-        except KeyboardInterrupt:
-            print("\nInterrupted! Exiting interactive mode.")
-            break
 
 
 def Main():
@@ -125,17 +133,19 @@ def Main():
     parser.add_argument('-d', '--date', help="Convert date (any format) to Unix timestamp")
     parser.add_argument('-r', '--relative', help="Convert relative time (e.g., '2 days ago') to timestamp")
     parser.add_argument('-delta', nargs=2, help="Calculate time difference between two inputs")
-    parser.add_argument('-f', '--format', default="%Y-%m-%d %H:%M:%S",
+    parser.add_argument('-f', '--format', default=Config.get('Settings', 'format', fallback="%Y-%m-%d %H:%M:%S"),
                         help="Output date format (e.g., %%Y-%%m-%%d) or 'short', 'long', 'iso'")
-    parser.add_argument('-z', '--timezone', help="Time zone (e.g., US/Pacific)")
+    parser.add_argument('-z', '--timezone', default=Config.get('Settings', 'timezone', fallback=None),
+                        help="Time zone (e.g., US/Pacific)")
     parser.add_argument('-i', '--input', help="File with timestamps (one per line)")
+    parser.add_argument('-v', '--verbose', action='store_true', help="Enable verbose output")
 
     args = parser.parse_args()
 
     print(BANNER)
 
     if args.timestamp:
-        result = UnixToDatetime(args.timestamp, args.timezone, args.format)
+        result = UnixToDatetime(args.timestamp, args.timezone, args.format, args.verbose)
         print(f"{args.timestamp} -> {result}")
     elif args.date:
         result = DatetimeToUnix(args.date, args.timezone)
