@@ -32,7 +32,7 @@ def SetupLogging(logFile=None):
             format="%(asctime)s - %(levelname)s - %(message)s"
         )
 
-BANNER = """
+BANNER = r"""
    _____ _                        _______          _ 
   / ____| |                      |__   __|        | |
  | |    | |__  _ __ ___  _ __   ___ | | ___   ___ | |
@@ -78,9 +78,12 @@ def DatetimeToUnix(dateStr, timezone=None):
 def ParseRelativeTime(relativeStr, timezone=None):
     """Convert relative time (e.g., '2 days ago') to Unix timestamp."""
     try:
-        seconds = humanfriendly.parse_timespan(relativeStr)
+        relativeStr = relativeStr.lower().strip()
+        isPast = "ago" in relativeStr
+        timespanStr = relativeStr.replace("ago", "").replace("from now", "").strip()
+        seconds = humanfriendly.parse_timespan(timespanStr)
         now = datetime.now(pytz.utc if timezone is None else pytz.timezone(timezone))
-        dtObject = now - timedelta(seconds=seconds) if "ago" in relativeStr.lower() else now + timedelta(seconds=seconds)
+        dtObject = now - timedelta(seconds=seconds) if isPast else now + timedelta(seconds=seconds)
         return int(dtObject.timestamp())
     except Exception as e:
         return f"{Fore.RED}Error: {str(e)}{Style.RESET_ALL}"
