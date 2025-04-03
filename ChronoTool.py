@@ -123,25 +123,30 @@ def ProcessBatchFile(filePath, timezone=None, outputFormat="%Y-%m-%d %H:%M:%S"):
 History = []
 def InteractiveMode():
     """Run ChronoTool in interactive mode."""
-    print(BANNER)
     print("Enter a Unix timestamp, date, or 'history' to see past inputs, or 'q' to quit")
     while True:
-        userInput = input("\nInput: ").strip()
-        if userInput.lower() == 'q':
-            print("Goodbye!")
-            break
-        elif userInput.lower() == 'history':
-            print(f"{Fore.YELLOW}History:{Style.RESET_ALL}")
-            for i, entry in enumerate(History, 1):
-                print(f"{i}. {entry}")
-        else:
-            History.append(userInput)
-            if userInput.isdigit():
-                result = UnixToDatetime(int(userInput))
-                print(f"Result: {result}")
+        try:
+            userInput = input("\nInput: ").strip()
+            if userInput.lower() == 'q':
+                print("Goodbye!")
+                break
+            elif userInput.lower() == 'history':
+                print(f"{Fore.YELLOW}History:{Style.RESET_ALL}")
+                for i, entry in enumerate(History, 1):
+                    print(f"{i}. {entry}")
             else:
-                result = DatetimeToUnix(userInput)
-                print(f"Result: {result}")
+                History.append(userInput)
+                if userInput.isdigit():
+                    result = UnixToDatetime(int(userInput))
+                    print(f"Result: {result}")
+                else:
+                    result = DatetimeToUnix(userInput)
+                    print(f"Result: {result}")
+        except KeyboardInterrupt:
+            print("\nInterrupted by user. Goodbye!")
+            break
+        except Exception as e:
+            print(f"{Fore.RED}Error: {str(e)}{Style.RESET_ALL}")
 
 def Main():
     parser = argparse.ArgumentParser(
