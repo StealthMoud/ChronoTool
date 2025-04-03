@@ -1,6 +1,8 @@
 # ChronoTool
 A versatile time conversion utility.
 
+![Interactive Mode](./images/screenshot.png)
+
 ## Installation
 1. Clone the repository: `git clone https://github.com/StealthMoud/ChronoTool.git`
 2. Install dependencies: `pip install -r requirements.txt`
